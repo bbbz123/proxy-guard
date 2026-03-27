@@ -1,35 +1,20 @@
 # Packaging Notes
 
-This project includes a WiX v4 template for building a per-user MSI installer,
-plus PowerShell scripts for local testing without MSI.
+This folder contains the active packaging and local install scripts for the current route:
 
-Expected build artifacts:
+- Python setup UI
+- Rust helper
+- Portable distribution
 
-- `target\release\proxy_guard_helper.exe`
-- `proxy_guard_setup.pyw`
-- `proxy_guard_setup.cmd`
+Active scripts:
 
-Installer responsibilities:
-
-- Install into `%LOCALAPPDATA%\Programs\ProxyGuard`
-- Register `proxy_guard_helper.exe` under the current user's `Run` key
-- Add Start Menu shortcuts for opening settings and uninstalling
-- Launch the Python setup UI once after installation
-
-The WiX template is intended as scaffolding and should be built with WiX Toolset
-v4 or newer.
-
-Helpful scripts:
-
-- `build-msi.ps1`
 - `build-portable.ps1`
+  Builds `proxy_guard_helper.exe`, packages `proxy_guard_setup.pyw` into a standalone setup exe with PyInstaller, and creates a portable zip.
 - `dev-install.ps1`
+  Copies the helper plus Python setup launcher into `%LOCALAPPDATA%\Programs\ProxyGuard` for local testing.
 - `dev-uninstall.ps1`
+  Removes the local test install.
 
-Current note:
+Legacy MSI/WiX scaffolding has been moved to:
 
-- `dev-install.ps1` now installs the Python setup UI launcher for local testing.
-- `build-msi.ps1` still builds the legacy Rust setup executable because the WiX
-  template has not yet been migrated to bundle a Python runtime.
-- `build-portable.ps1` builds the current Python setup UI into a standalone exe
-  with PyInstaller, then bundles it with `proxy_guard_helper.exe`.
+- `legacy\msi`

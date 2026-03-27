@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Parent $PSScriptRoot
-$wixFile = Join-Path $PSScriptRoot "wix\Product.wxs"
+$wixFile = Join-Path $PSScriptRoot "Product.wxs"
 $outputDir = Join-Path $root "dist"
 $outputMsi = Join-Path $outputDir "ProxyGuard.msi"
 

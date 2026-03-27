@@ -2,7 +2,6 @@
 members = [
     "proxy_guard_core",
     "proxy_guard_helper",
-    "proxy_guard_setup",
 ]
 default-members = [
     "proxy_guard_core",
