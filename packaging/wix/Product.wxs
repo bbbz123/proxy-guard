@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+  <Package
+    Name="Proxy Guard"
+    Manufacturer="OpenAI Codex"
+    Version="0.1.0"
+    UpgradeCode="4CA3916A-6B9D-4C28-A7B4-FA4F196B26B2"
+    Scope="perUser"
+    Language="1033">
+
+    <MajorUpgrade DowngradeErrorMessage="A newer version of Proxy Guard is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="INSTALLFOLDER" Name="Programs\ProxyGuard" />
+    </StandardDirectory>
+
+    <StandardDirectory Id="ProgramMenuFolder">
+      <Directory Id="ProxyGuardPrograms" Name="Proxy Guard" />
+    </StandardDirectory>
+
+    <Feature Id="MainFeature" Title="Proxy Guard" Level="1">
+      <ComponentGroupRef Id="MainComponents" />
+    </Feature>
+
+    <CustomAction
+      Id="LaunchSetup"
+      FileRef="SetupExeFile"
+      ExeCommand=""
+      Execute="immediate"
+      Return="asyncNoWait" />
+
+    <InstallExecuteSequence>
+      <Custom Action="LaunchSetup" After="InstallFinalize">NOT Installed</Custom>
+    </InstallExecuteSequence>
+  </Package>
+
+  <Fragment>
+    <ComponentGroup Id="MainComponents" Directory="INSTALLFOLDER">
+      <Component Id="HelperExeComponent" Guid="A10F848E-AB35-4EA2-B2C1-9FE57BF585B6">
+        <File Id="HelperExeFile" Source="..\..\target\release\proxy_guard_helper.exe" KeyPath="yes" />
+        <RegistryValue
+          Root="HKCU"
+          Key="Software\Microsoft\Windows\CurrentVersion\Run"
+          Name="ProxyGuardHelper"
+          Value="[#HelperExeFile]"
+          Type="string" />
+      </Component>
+
+      <Component Id="SetupExeComponent" Guid="9EC85C62-C931-4D7B-9E7C-BB5F9AA5210F">
+        <File Id="SetupExeFile" Source="..\..\target\release\proxy_guard_setup.exe" KeyPath="yes" />
+      </Component>
+
+      <Component Id="StartMenuComponent" Guid="9F7E0C74-2F13-4A1B-8D13-E8DC8D64E50F" Directory="ProxyGuardPrograms">
+        <Shortcut
+          Id="OpenSettingsShortcut"
+          Name="Open Proxy Guard Settings"
+          Target="[#SetupExeFile]"
+          WorkingDirectory="INSTALLFOLDER" />
+        <Shortcut
+          Id="UninstallShortcut"
+          Name="Uninstall Proxy Guard"
+          Target="[SystemFolder]msiexec.exe"
+          Arguments="/x [ProductCode]" />
+        <RemoveFolder Id="RemoveProxyGuardProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU" Key="Software\ProxyGuard" Name="Installed" Type="integer" Value="1" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>

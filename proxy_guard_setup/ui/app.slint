@@ -1,0 +1,279 @@
+import { Button, CheckBox, ComboBox, ScrollView, VerticalBox, HorizontalBox } from "std-widgets.slint";
+
+export struct CandidateRow {
+    id: string,
+    title: string,
+    detail: string,
+    recommended: bool,
+    selected: bool,
+}
+
+component SectionCard inherits Rectangle {
+    in property <string> heading;
+    in property <string> subheading;
+
+    border-width: 1px;
+    border-color: #d8dde6;
+    border-radius: 12px;
+    background: #ffffff;
+
+    VerticalBox {
+        padding: 16px;
+        spacing: 10px;
+
+        Text {
+            text: root.heading;
+            font-size: 24px;
+            font-weight: 700;
+            color: #1f2933;
+        }
+
+        if root.subheading != "": Text {
+            text: root.subheading;
+            wrap: word-wrap;
+            color: #5b6574;
+        }
+    }
+}
+
+export component AppWindow inherits Window {
+    in-out property <[CandidateRow]> candidates;
+    in-out property <[string]> cleanup_scopes;
+    in-out property <int> selected_scope_index;
+    in-out property <bool> cleanup_on_login;
+    in-out property <bool> auto_start_helper;
+    in-out property <string> status_text;
+
+    callback toggle_candidate(index: int, selected: bool);
+    callback rescan();
+    callback save();
+
+    title: "Proxy Guard 设置";
+    width: 940px;
+    height: 760px;
+    background: #f5f7fb;
+
+    VerticalBox {
+        padding: 18px;
+        spacing: 14px;
+
+        SectionCard {
+            heading: "Proxy Guard";
+            subheading: "选择要由 Proxy Guard 在关机/重启时托管并清理的系统代理项。";
+        }
+
+        ScrollView {
+            height: 520px;
+
+            VerticalBox {
+                spacing: 14px;
+
+                Rectangle {
+                    border-width: 1px;
+                    border-color: #d8dde6;
+                    border-radius: 12px;
+                    background: #ffffff;
+
+                    VerticalBox {
+                        padding: 16px;
+                        spacing: 12px;
+
+                        Text {
+                            text: "托管代理";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: #1f2933;
+                        }
+
+                        Text {
+                            text: "只会清理你在这里勾选的代理项。推荐优先勾选 127.0.0.1 / localhost 这类回环代理。";
+                            wrap: word-wrap;
+                            color: #5b6574;
+                        }
+
+                        if root.candidates.length == 0: Rectangle {
+                            border-width: 1px;
+                            border-color: #d8dde6;
+                            border-radius: 10px;
+                            background: #fafbfc;
+                            min-height: 96px;
+
+                            Text {
+                                text: "当前没有检测到可托管的系统代理候选项。";
+                                color: #5b6574;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        for candidate[index] in root.candidates: Rectangle {
+                            border-width: 1px;
+                            border-color: candidate.selected ? #78a9ff : #d8dde6;
+                            border-radius: 10px;
+                            background: candidate.recommended ? #f6fbf2 : #fbfcfe;
+                            min-height: 112px;
+
+                            VerticalBox {
+                                padding: 14px;
+                                spacing: 10px;
+
+                                HorizontalBox {
+                                    spacing: 12px;
+                                    alignment: start;
+
+                                    CheckBox {
+                                        text: "";
+                                        checked: candidate.selected;
+                                        toggled => {
+                                            root.toggle_candidate(index, self.checked);
+                                        }
+                                    }
+
+                                    VerticalBox {
+                                        spacing: 4px;
+
+                                        Text {
+                                            text: candidate.title + (candidate.recommended ? "（推荐）" : "");
+                                            font-size: 19px;
+                                            font-weight: 700;
+                                            color: #1f2933;
+                                        }
+
+                                        Text {
+                                            text: candidate.detail;
+                                            wrap: word-wrap;
+                                            color: #4f5b66;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    border-width: 1px;
+                    border-color: #d8dde6;
+                    border-radius: 12px;
+                    background: #ffffff;
+
+                    VerticalBox {
+                        padding: 16px;
+                        spacing: 12px;
+
+                        Text {
+                            text: "结束事件范围";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: #1f2933;
+                        }
+
+                        HorizontalBox {
+                            spacing: 12px;
+
+                            Text {
+                                text: "清理时机：";
+                                vertical-alignment: center;
+                                color: #1f2933;
+                            }
+
+                            ComboBox {
+                                model: root.cleanup_scopes;
+                                current-index <=> root.selected_scope_index;
+                            }
+                        }
+
+                        Text {
+                            text: "提示：Windows 无法可靠区分“关机”和“重启”，所以这里统一使用“关机/重启（非注销）”。";
+                            wrap: word-wrap;
+                            color: #5b6574;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    border-width: 1px;
+                    border-color: #d8dde6;
+                    border-radius: 12px;
+                    background: #ffffff;
+
+                    VerticalBox {
+                        padding: 16px;
+                        spacing: 12px;
+
+                        Text {
+                            text: "启动选项";
+                            font-size: 24px;
+                            font-weight: 700;
+                            color: #1f2933;
+                        }
+
+                        CheckBox {
+                            text: "登录后检查并清理残留代理";
+                            checked <=> root.cleanup_on_login;
+                        }
+
+                        CheckBox {
+                            text: "开机自动启动 Proxy Guard helper";
+                            checked <=> root.auto_start_helper;
+                        }
+                    }
+                }
+
+                Rectangle {
+                    border-width: 1px;
+                    border-color: #d8dde6;
+                    border-radius: 12px;
+                    background: #ffffff;
+                    min-height: 86px;
+
+                    VerticalBox {
+                        padding: 16px;
+                        spacing: 8px;
+
+                        Text {
+                            text: "当前状态";
+                            font-size: 22px;
+                            font-weight: 700;
+                            color: #1f2933;
+                        }
+
+                        Text {
+                            text: root.status_text;
+                            wrap: word-wrap;
+                            color: #5b6574;
+                        }
+                    }
+                }
+            }
+        }
+
+        Rectangle {
+            border-width: 1px;
+            border-color: #d8dde6;
+            border-radius: 12px;
+            background: #ffffff;
+            min-height: 78px;
+
+            HorizontalBox {
+                padding: 14px;
+                spacing: 12px;
+
+                Button {
+                    text: "重新扫描";
+                    min-width: 220px;
+                    clicked => { root.rescan(); }
+                }
+
+                Rectangle { horizontal-stretch: 1; }
+
+                Button {
+                    text: "保存";
+                    primary: true;
+                    min-width: 240px;
+                    clicked => { root.save(); }
+                }
+            }
+        }
+    }
+}

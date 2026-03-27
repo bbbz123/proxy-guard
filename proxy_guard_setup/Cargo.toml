@@ -1,0 +1,15 @@
+[package]
+name = "proxy_guard_setup"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+build = "build.rs"
+
+[dependencies]
+anyhow.workspace = true
+proxy_guard_core = { path = "../proxy_guard_core" }
+slint = { workspace = true, features = ["std", "accessibility"] }
+
+[build-dependencies]
+slint-build = "1.13"

@@ -1,0 +1,36 @@
+[workspace]
+members = [
+    "proxy_guard_core",
+    "proxy_guard_helper",
+    "proxy_guard_setup",
+]
+default-members = [
+    "proxy_guard_core",
+    "proxy_guard_helper",
+]
+resolver = "3"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+authors = ["OpenAI Codex"]
+
+[workspace.dependencies]
+anyhow = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "6.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+slint = "1.13"
+thiserror = "2.0"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Networking_WinInet",
+    "Win32_Security",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Threading",
+    "Win32_UI_WindowsAndMessaging",
+] }
+winreg = "0.55"
