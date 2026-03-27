@@ -1,102 +1,109 @@
 # Proxy Guard
 
-`Proxy Guard` is a Windows helper that clears user-selected system proxy entries
-during shutdown/restart to reduce connectivity issues caused by stale local
-proxy settings.
+`Proxy Guard` 是一个面向 Windows 的代理残留清理工具，用来在关机或重启时清理用户自己选中的系统代理项，尽量减少因为本地代理残留导致的“下次开机没网”问题。
 
-The tool is intentionally narrow:
+它的定位很克制，只处理当前用户的 WinINet 系统代理，不接管 Clash，不处理 TUN、DNS、路由、WinHTTP 或网卡。
 
-- Only touches the current user's WinINet proxy settings
-- Only clears rules the user explicitly selected in setup
-- Does not manage Clash, TUN, DNS, routes, WinHTTP, or network adapters
-
-## Workspace Layout
+## 项目结构
 
 - `proxy_guard_core`
-  Shared parsing, candidate scanning, config persistence, registry access, and cleanup logic.
+  共享核心库，负责代理扫描、规则匹配、配置读写、注册表访问和清理逻辑。
 - `proxy_guard_helper`
-  A hidden background helper that runs per-user and listens for session-end events.
+  Rust 编写的后台 helper，按当前用户运行，在关机/重启时执行清理。
 - `proxy_guard_setup`
-  The older Rust/Slint setup crate, kept in the workspace but no longer used by default.
+  旧的 Rust/Slint 设置界面 crate，目前保留在工作区中，但默认不再作为主设置界面使用。
 - `proxy_guard_setup.pyw`
-  The current Python `tkinter` setup window for scanning current proxies and saving managed rules.
+  当前使用的 Python `tkinter` 设置界面，用来扫描当前代理、选择托管规则并保存配置。
 - `packaging`
-  WiX scaffolding plus helper PowerShell scripts for local install/uninstall.
+  本地安装、便携打包和 WiX MSI 脚本。
 
-## Runtime Behavior
+## 运行方式
 
-- The helper is designed as a per-user background process.
-- It reloads the config at shutdown/restart time, so setup changes apply without restarting the helper.
-- Default scope is `shutdown + restart`.
-- Logoff cleanup is optional and currently controlled by the saved cleanup scope.
+- helper 作为当前用户后台进程运行。
+- helper 会在触发关机/重启事件时重新读取配置，所以改完设置后不需要重启 helper。
+- 默认清理范围是“关机/重启（非注销）”。
+- 也支持可选地把“注销”纳入清理范围。
 
-## Config File
+## 配置文件
 
-Config is stored at:
+默认配置文件位置：
 
 `%LOCALAPPDATA%\ProxyGuard\config.json`
 
-The file contains:
+配置内容主要包括：
 
 - `managed_rules`
 - `cleanup_scope`
+- `cleanup_on_login`
+- `auto_start_helper`
 - `meta`
 
-## Building
+如果使用便携模式，配置会保存在程序目录旁边的 `config\config.json`。
 
-```powershell
-cargo build --release
-```
+## 本地测试
 
-Or on Windows, use the helper batch file:
+运行 Rust 测试并构建 helper：
 
 ```bat
 test.bat
 ```
 
-To run the build/test flow and then open the setup UI automatically:
+运行测试、构建后直接打开设置界面：
 
 ```bat
 test.bat open
 ```
 
-To simply double-click a batch file and open the graphical setup window:
+直接双击打开图形设置界面：
 
 ```bat
 test-ui.bat
 ```
 
-## Local Tryout Without MSI
+## 本地安装体验
 
-After building the helper binary, you can use the included helper scripts:
+构建 helper 后，可以用本地脚本模拟安装：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\packaging\dev-install.ps1
 ```
 
-This currently targets the Rust helper binary for local installation. The Python
-setup UI is launched locally through `test-ui.bat`.
-
-To uninstall the local script-based install:
+卸载本地安装：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\packaging\dev-uninstall.ps1
 ```
 
-## MSI Packaging
+## 便携打包
 
-WiX scaffolding lives in `packaging\wix\Product.wxs`.
+当前推荐的分发方式是便携包：
 
-If WiX Toolset v4 is available, a package build can be driven with:
+```powershell
+powershell -ExecutionPolicy Bypass -File .\packaging\build-portable.ps1
+```
+
+这个脚本会：
+
+- 构建 `proxy_guard_helper.exe`
+- 用 PyInstaller 把 `proxy_guard_setup.pyw` 打成独立 `exe`
+- 生成便携目录和便携压缩包
+
+## MSI 打包
+
+WiX 模板位于：
+
+`packaging\wix\Product.wxs`
+
+如果本机已安装 WiX Toolset v4，可以运行：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\packaging\build-msi.ps1
 ```
 
-## Current Limitations
+注意：当前 WiX 模板仍沿用旧的 Rust 设置程序路径，尚未迁移到 Python GUI 的最终安装版方案。
 
-- `ShutdownOnly` is best-effort because Windows does not reliably expose a clean
-  "shutdown but not restart" distinction through the session-end path used here.
-- No tray menu is provided; rerun setup through `test-ui.bat` or `proxy_guard_setup.pyw`.
-- The WiX template is scaffolded and ready for local packaging, but full MSI UX
-  polish such as "delete config on uninstall" is not implemented yet.
+## 当前限制
+
+- `ShutdownOnly` 只保留兼容意义，Windows 在这个会话结束路径上并不能可靠地区分“关机”和“重启”。
+- 目前没有托盘菜单，需要重新运行设置界面来改配置。
+- 便携包已经可用，但安装版体验和卸载 UX 仍然可以继续打磨。
